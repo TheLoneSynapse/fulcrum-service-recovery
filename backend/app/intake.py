@@ -101,9 +101,9 @@ def parse_order_csv(raw: str | None) -> list[dict]:
 
     rows: list[dict] = []
     for index, raw_row in enumerate(reader, start=1):
-        row = {(k or "").strip().lower(): (v or "").strip() for k, v in raw_row.items()}
-        if None in row:  # ragged row: too many fields
+        if None in raw_row:  # ragged row: more fields than the header
             raise MalformedCSV(f"row {index} has more fields than the header")
+        row = {(k or "").strip().lower(): (v or "").strip() for k, v in raw_row.items()}
         order_id = row.get("order_id", "").upper()
         if not order_id:
             raise MalformedCSV(f"row {index} has an empty order_id")
