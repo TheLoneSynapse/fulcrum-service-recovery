@@ -39,8 +39,8 @@ ROOT = Path(__file__).resolve().parents[2]  # .../fulcrum-service-recovery-main
 EVIDENCE_PATH = ROOT / "docs" / "evidence" / "deliverable1_token_factory.json"
 
 _PROBE_PROMPT = (
-    "Reply with exactly one sentence confirming you are running on AMD "
-    "infrastructure. Then stop."
+    "Reply with exactly one sentence confirming you received this request "
+    "and are ready to process service-recovery cases. Then stop."
 )
 
 

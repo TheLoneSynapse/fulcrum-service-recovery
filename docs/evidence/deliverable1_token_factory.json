@@ -3,7 +3,7 @@
   "title": "AMD Token Factory — first verified call",
   "provider": "token-factory",
   "endpoint": "https://developer.amd.com.cn/radeon/api/v1",
-  "requested_at_utc": "2026-10-18T04:53:02Z",
+  "requested_at_utc": "2026-10-18T07:27:42Z",
   "probe": {
     "path": "/models (unauthenticated)",
     "http_status": 401,
@@ -32,7 +32,7 @@
       "Qwen3.8-Flash-Next"
     ],
     "selected": {
-      "id": "Qwen3.8-Flash-Next",
+      "id": "DeepSeek-V4-Flash",
       "version": null,
       "owned_by": null,
       "created": null
@@ -41,34 +41,34 @@
   "chat": {
     "request": {
       "url": "https://developer.amd.com.cn/radeon/api/v1/chat/completions",
-      "model": "Qwen3.8-Flash-Next",
+      "model": "DeepSeek-V4-Flash",
       "temperature": 0.2,
       "messages": [
         {
           "role": "user",
-          "content": "Reply with exactly one sentence confirming you are running on AMD infrastructure. Then stop."
+          "content": "Reply with exactly one sentence confirming you received this request and are ready to process service-recovery cases. Then stop."
         }
       ],
       "auth": "Authorization: Bearer [REDACTED]"
     },
     "response": {
       "http_status": 200,
-      "model": "self-dploy/Qwen3.8-Flash-Next",
-      "request_ref": "fa3ae66d27d54384b157880b0fee20ce",
-      "latency_ms": 39343.44,
-      "content": "\n\nI cannot truthfully confirm that I am running on AMD infrastructure.",
+      "model": "self-dploy/DeepSeek-V4-Flash",
+      "request_ref": "c03ff4b77aa5490ab5d147c5d98519a1",
+      "latency_ms": 2508.46,
+      "content": "Acknowledged — I am ready to process service-recovery cases.",
       "error": null
     },
-    "started_at_utc": "2026-10-18T04:53:04Z",
-    "finished_at_utc": "2026-10-18T04:53:43Z"
+    "started_at_utc": "2026-10-18T07:27:45Z",
+    "finished_at_utc": "2026-10-18T07:27:47Z"
   },
   "verification": {
     "verified": true,
     "status": "verified",
     "reasons": [
       "GET /models -> HTTP 200 (16 published)",
-      "POST /chat/completions -> HTTP 200, model=self-dploy/Qwen3.8-Flash-Next, ref=fa3ae66d27d54384b157880b0fee20ce"
+      "POST /chat/completions -> HTTP 200, model=self-dploy/DeepSeek-V4-Flash, ref=c03ff4b77aa5490ab5d147c5d98519a1"
     ]
   },
-  "completed_at_utc": "2026-10-18T04:53:43Z"
+  "completed_at_utc": "2026-10-18T07:27:47Z"
 }

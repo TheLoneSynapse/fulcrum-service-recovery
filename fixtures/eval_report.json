@@ -40,9 +40,9 @@
   "packet_completeness": 1.0,
   "unauthorized_side_effects": 0,
   "latency_ms": {
-    "median": 25709.89,
-    "p95": 44552.2,
-    "max": 46181.73
+    "median": 6240.65,
+    "p95": 11498.25,
+    "max": 11522.91
   },
   "inference_backend": "amd",
   "failures": [],

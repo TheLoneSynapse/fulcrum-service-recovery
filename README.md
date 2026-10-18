@@ -86,7 +86,7 @@ redacted before anything is written) to
 - unauthenticated probe: **HTTP 401 `Login required`** (endpoint reachable),
 - authenticated `GET /v1/models`: **16 published models**,
 - `POST /v1/chat/completions`: **HTTP 200** with a parseable completion, model
-  `Qwen3.8-Flash-Next` (selected via `AMD_MODEL`; model discovery otherwise
+  `DeepSeek-V4-Flash` (selected via `AMD_MODEL`; model discovery otherwise
   picks the first id, and some published ids are non-chat models),
 - request ref, UTC timestamps and latency included; the API key is scanned
   for and redacted before anything is written.
@@ -126,6 +126,18 @@ Walkthrough video (~2½ min: paste 3 complaints → batch analyze → queue →
 bulk approve → keyboard triage with auto-advance):
 [docs/demo/fulcrum-ui-walkthrough.webm](docs/demo/fulcrum-ui-walkthrough.webm).
 
+## Synthetic data and naming
+
+Everything in this repository is **synthetic**: complaints, order CSVs,
+policies, fixtures, screenshots and recordings are generated test data for the
+fictional restaurant group **Ember & Oak** — no real customer data, orders, or
+incidents exist here, anywhere. What the demo shows is a
+**policy-authorized simulated recovery, not a verified fulfillment failure**:
+the pipeline triages fabricated complaints under the explicit synthetic policy
+(`contracts/restaurant_policy.synthetic.json`), and every packet discloses the
+backend, policy version and missing facts so nothing reads as a real-world
+claim.
+
 ## Security caveat
 
 Synthetic data only; no real customer data, tokens, or proprietary material in
@@ -146,7 +158,7 @@ python -m app.deliverable1 # exit 0 verified -> docs/evidence/
 
 - Unit/API tests: **45 passed** (smoke tests 1–13 of `docs/planning/06_VERIFICATION_AND_EVALS.md`, plus provider-interface units: selection/fail-closed rules, async client success/401/unparseable paths, model discovery, secret-leak checks, Deliverable #1 blocked+verified paths, transient-429 retry/backoff units incl. bounded-attempts and no-retry-on-401, plus batch-endpoint coverage, plus store-durability units: SQLite case+decision+audit surviving a restart, in-memory isolation, durability disclosure)
 - 20-case audit on the **live AMD endpoint** (backend `amd`): **routing accuracy 100%**, packet completeness 100%, unauthorized side effects 0
-- Latency (live Token Factory, latest run 2026-10-18): median **25.7 s**, p95 **44.6 s** — shared-capacity endpoint under event load; transient 429s are retried with bounded backoff honouring `Retry-After` (stub-only pipeline latency: median 3.08 ms, p95 25.14 ms, measured 2026-10-17)
+- Latency (live Token Factory, latest run 2026-10-18, `DeepSeek-V4-Flash`): median **6.24 s**, p95 **11.50 s** — shared-capacity endpoint; transient 429s are retried with bounded backoff honouring `Retry-After` (stub-only pipeline latency: median 3.08 ms, p95 25.14 ms, measured 2026-10-17)
 - Deliverable #1: **verified, exit 0** (2026-10-18) — see `docs/evidence/deliverable1_token_factory.json`
 
 Honesty notes: results are regenerated, never hand-edited
@@ -161,6 +173,15 @@ survives server restarts.
 ## Model constraints
 - Temperature 0.2, JSON-only responses; unparseable provider output → `INFERENCE_FAILED` (no silent fallback on the judged path).
 - Deterministic validation runs independently of model output and can downgrade any draft to `REVIEW_REQUIRED`.
+
+## Acknowledgements
+
+- **Anis** — for the AMD-006, AMD-007 and AMD-008 work credited here: the
+  Token Factory access path, the model-endpoint behaviour notes and the failure
+  handling that shaped this repo's provider seam.
+- **Live DeepSeek receipt** — Deliverable #1 evidence was regenerated against
+  the AMD Token Factory serving `DeepSeek-V4-Flash` (HTTP 200, request ref
+  recorded): see `docs/evidence/deliverable1_token_factory.json`.
 
 ## License
 MIT
