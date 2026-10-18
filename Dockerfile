@@ -22,6 +22,12 @@ COPY frontend/ frontend/
 # mount one to keep them:  -v fulcrum-data:/app/data
 ENV FULCRUM_STORE_PATH=/app/data/fulcrum_cases.sqlite
 
+# Run unprivileged: the app needs write access only to its data directory.
+RUN useradd --create-home appuser \
+    && mkdir -p /app/data \
+    && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8000
 WORKDIR /app/backend
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

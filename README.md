@@ -147,7 +147,16 @@ contact exist anywhere in the code — decisions only append audit events
 Provider keys are read from environment variables only and never appear in
 responses, exports, or logs. Complaint text is passed to the model as untrusted
 data and prompt-injection patterns can only *escalate* a case, never override
-policy.## Tests and results (measured 2026-10-18, Windows, Python 3.14, live AMD Token Factory)
+policy. Hardening for the public demo (each covered by tests): interactive API
+docs/`openapi.json` are disabled so the route surface is not advertised,
+case creation is rate-limited per client IP (`FULCRUM_RATE_LIMIT`, default
+60/min, `429` + `Retry-After` — enforced *before* the pipeline so rejected
+requests never spend an AMD call), security headers
+(`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are set on
+every response, static traversal and `.env` exposure are blocked (404), and
+the container runs as an unprivileged user. The API is deliberately
+unauthenticated (single-tenant judge demo, no cookies or sessions); quote
+fields and complaint text reach templates only as text, never as HTML.## Tests and results (measured 2026-10-18, Windows, Python 3.14, live AMD Token Factory)
 
 ```bash
 cd backend

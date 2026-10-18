@@ -8,9 +8,12 @@ loading, bounded CSV errors, and honest inference provenance in every packet.
 from __future__ import annotations
 
 import os
+import threading
+import time
+from collections import deque
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.staticfiles import StaticFiles
 
 from .exporter import PacketExporter  # noqa: F401  (re-exported for tests)
@@ -25,7 +28,16 @@ ROOT = Path(__file__).resolve().parents[2]  # .../fulcrum-service-recovery-main
 CONTRACTS_DIR = ROOT / "contracts"
 FRONTEND_DIR = ROOT / "frontend"
 
-app = FastAPI(title="Fulcrum Service Recovery", version="0.1.0")
+app = FastAPI(
+    title="Fulcrum Service Recovery",
+    version="0.1.0",
+    # No public API schema or interactive docs: the endpoints are exercised by
+    # the bundled frontend only, and /docs would advertise the full route
+    # surface of the (deliberately unauthenticated) demo API to anyone.
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 # Durable by default: cases persist to a local SQLite file so a pending review
 # queue survives restarts. Override with FULCRUM_STORE_PATH ("" or ":memory:"
@@ -35,6 +47,65 @@ STORE_PATH = os.environ.get("FULCRUM_STORE_PATH", "").strip() or str(
 )
 store = ReviewStore(STORE_PATH)
 pipeline = Pipeline(PolicyEngine(CONTRACTS_DIR), ModelAdapter(), store)
+
+# ------------------------------------------------------------ abuse limits
+# The demo API is unauthenticated by design (single-tenant judge demo; no
+# cookies, no sessions). To keep one visitor from draining the shared AMD
+# quota or flooding the queue, case creation is rate-limited per client IP.
+# The value is read per call so tests can tune it; windows are bounded.
+_RATE_WINDOW_S = 60.0
+_rate_lock = threading.Lock()
+_rate_windows: dict[str, deque[float]] = {}
+
+
+def _creation_limit() -> int:
+    try:
+        return max(1, int(os.environ.get("FULCRUM_RATE_LIMIT", "60")))
+    except ValueError:
+        return 60
+
+
+def _client_key(request: Request) -> str:
+    """Nearest-hop client: last X-Forwarded-For entry behind Render's proxy,
+    direct peer otherwise (local runs / tests)."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        last = forwarded.split(",")[-1].strip()
+        if last:
+            return last
+    return request.client.host if request.client else "unknown"
+
+
+def _enforce_creation_limit(request: Request) -> None:
+    now = time.monotonic()
+    limit = _creation_limit()
+    key = _client_key(request)
+    with _rate_lock:
+        if len(_rate_windows) > 4096:  # bound memory across varied client keys
+            _rate_windows.clear()
+        window = _rate_windows.setdefault(key, deque())
+        while window and now - window[0] > _RATE_WINDOW_S:
+            window.popleft()
+        if len(window) >= limit:
+            retry_after = max(1, int(_RATE_WINDOW_S - (now - window[0])) + 1)
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "rate_limited",
+                    "message": "too many cases created from this address — try again shortly",
+                },
+                headers={"Retry-After": str(retry_after)},
+            )
+        window.append(now)
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    return response
 
 
 @app.get("/health")
@@ -61,7 +132,10 @@ def policies() -> list[dict]:
 
 
 @app.post("/api/cases")
-def create_case(request: IntakeRequest) -> dict:
+def create_case(request: IntakeRequest, http_request: Request) -> dict:
+    # Quota guard runs BEFORE the pipeline so a limited client cannot burn
+    # AMD inference calls on rejected requests.
+    _enforce_creation_limit(http_request)
     try:
         return pipeline.run(
             complaint_text=request.complaint_text,
@@ -79,7 +153,7 @@ def create_case(request: IntakeRequest) -> dict:
 
 
 @app.post("/api/cases/batch")
-def create_cases_batch(request: BatchIntakeRequest) -> dict:
+def create_cases_batch(request: BatchIntakeRequest, http_request: Request) -> dict:
     """Run many complaints through the pipeline in one call.
 
     Shared CSV/policy means identical inputs for every case, so a bad policy
@@ -87,6 +161,7 @@ def create_cases_batch(request: BatchIntakeRequest) -> dict:
     a misleading partial run. Unexpected per-case failures are reported per
     index without aborting the rest.
     """
+    _enforce_creation_limit(http_request)  # counts as one window slot per call
     cases: list[dict] = []
     errors: list[dict] = []
     for index, complaint in enumerate(request.complaints):
