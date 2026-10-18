@@ -1,0 +1,28 @@
+{
+  "_notice": "SYNTHETIC DEMO POLICY ONLY",
+  "version": "synthetic-v0.1",
+  "allowed_draft_actions": [
+    "apologize",
+    "acknowledge",
+    "request_more_information",
+    "offer_manager_followup"
+  ],
+  "compensation_caps": {
+    "refund_usd": 0,
+    "coupon_usd": 0
+  },
+  "never_automate": [
+    "refund",
+    "coupon_issue",
+    "customer_contact",
+    "order_edit",
+    "policy_override"
+  ],
+  "must_escalate_if": [
+    "compensation_requested",
+    "order_conflict",
+    "order_id_missing_but_asserted",
+    "threats_or_safety_issue",
+    "unsupported_claim"
+  ]
+}

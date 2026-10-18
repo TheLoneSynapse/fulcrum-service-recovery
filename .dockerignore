@@ -1,0 +1,16 @@
+# Never ship to the image: secrets, local case data, caches, VCS metadata.
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite-*
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+node_modules/
+.git/
+docs/
+Dockerfile
+.dockerignore
