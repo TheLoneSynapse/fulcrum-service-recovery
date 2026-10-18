@@ -1,0 +1,25 @@
+# Render Blueprint — Fulcrum Service Recovery
+# New + → Blueprint → select this repo → Render reads this file and creates
+# the web service. Set the secret env vars in the dashboard after creation.
+services:
+  - type: web
+    name: fulcrum-service-recovery
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Non-secret defaults (safe to keep in git):
+      - key: AMD_PROVIDER
+        value: token-factory
+      - key: AMD_MODEL
+        value: DeepSeek-V4-Flash
+      - key: AMD_API_TIMEOUT
+        value: "90"
+      # Secret — set the value in the Render dashboard (never commit it):
+      - key: AMD_API_KEY
+        sync: false
+      # Optional override; defaults to the Token Factory base URL in code:
+      - key: AMD_API_BASE
+        sync: false
